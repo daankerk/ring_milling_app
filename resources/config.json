@@ -1,5 +1,5 @@
 {
-    "camera_index": 2,
+    "camera_index": 0,
     "save_code_directory": "/home/daan/Documents/thesis/engineering/coding/ring_milling_app/exports/g_archive",
     "calibration_directory": "/home/daan/Documents/thesis/engineering/coding/ring_milling_app/resources/initial_calibration.txt",
     "previous_points_directory": "/home/daan/Documents/thesis/engineering/coding/ring_milling_app/resources/previous_points.json",
