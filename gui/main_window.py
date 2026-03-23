@@ -1,7 +1,6 @@
 # imports
 from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QMessageBox, QGridLayout, QTextEdit, QFrame, QFileDialog
-from PyQt6.QtGui import QImage, QPixmap, QDesktopServices, QIcon
-from PyQt6.QtCore import Qt, QUrl
+from PyQt6.QtGui import QImage, QPixmap, QDesktopServices
 from datetime import datetime
 import json
 import cv2
