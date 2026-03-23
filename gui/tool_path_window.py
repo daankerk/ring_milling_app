@@ -10,7 +10,7 @@ from core.g_code import coords_to_gcode
 from core.read_config import save_dir, prev_points_dir
 
 class ToolPathWindow(QWidget):
-    def __init__(self, frame, x_offset, y_offset, mill_gap, save_flag):
+    def __init__(self, frame, x_offset, y_offset, mill_gap, save_flag, pix2mm):
         super().__init__()
         self.setWindowTitle("Tool Path Selection")
 
@@ -21,6 +21,7 @@ class ToolPathWindow(QWidget):
         self.mill_gap = mill_gap
         self.first_point = None     # for the calibration
         self.save_flag = save_flag
+        self.pix2mm = pix2mm
 
         # take the image
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -154,7 +155,7 @@ class ToolPathWindow(QWidget):
         # converting the points into G-code
         g_export_arr = np.array(self.points)
         self.g_export = coords_to_gcode(g_export_arr[:,0], g_export_arr[:,1], self.x_offset, self.y_offset, self.mill_gap,
-                                        self.first_point_offset_x, self.first_point_offset_y)
+                                        self.first_point_offset_x, self.first_point_offset_y, self.pix2mm)
         print(self.g_export)
 
         # write the g-code to a txt file

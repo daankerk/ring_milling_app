@@ -1,6 +1,5 @@
 import ast
 import json
-import os
 
 from PyQt6.QtCore import Qt
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QPen

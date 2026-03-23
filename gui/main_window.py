@@ -1,6 +1,6 @@
 # imports
-from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QInputDialog, QMessageBox, QGridLayout, QTextEdit, QFrame, QFileDialog
-from PyQt6.QtGui import QImage, QPixmap, QDesktopServices
+from PyQt6.QtWidgets import QMainWindow, QLabel, QPushButton, QVBoxLayout, QWidget, QMessageBox, QGridLayout, QTextEdit, QFrame, QFileDialog
+from PyQt6.QtGui import QImage, QPixmap, QDesktopServices, QIcon
 from PyQt6.QtCore import Qt, QUrl
 from datetime import datetime
 import json
@@ -8,8 +8,8 @@ import cv2
 from core.camera_thread import CameraThread
 from gui.calibration_window import CalibrationWindow
 from gui.tool_path_window import ToolPathWindow
-from gui.setting_window import SettingWindow
-from core.read_config import cal_dir, camera_index, std_save_flag
+from gui.show_config_window import ShowConfigWindow
+from core.read_config import camera_index, std_save_flag
 
 class MainWindow(QMainWindow):
     # initializations
@@ -18,67 +18,27 @@ class MainWindow(QMainWindow):
         self.setWindowTitle("Ringing, Milling and Chilling")
         self.setGeometry(0, 0, 800, 800)
 
-        # initialize tp selection frame
+        # initialize variables
         self.latest_frame = None
+        self.save_flag = std_save_flag  # set the standard save flag from config.json
+        self.calibration_flag = False   # to cancel proceeding without a calibration file
 
-        # set the archive save flag
-        self.save_flag = std_save_flag
-
-        # see if calibration is loaded
-        self.calibration_flag = False
-
-        # initialize the mill gap
-        self.mill_gap = 3#0
-
-        # read the calibration file path
-        calibration_file_path = cal_dir
-
-        # create the log string
-        self.log_str = []
-
-        # read initial calibration values from the file
-        with open(calibration_file_path) as f:
-            lines = [line.strip() for line in f if line.strip()]
-            self.x_offset_ini = self.y_offset_ini = 0
-            for line in lines:
-                if line.startswith("X"):
-                    self.x_offset_ini = float(line[1:])
-                elif line.startswith("Y"):
-                    self.y_offset_ini = float(line[1:])
-
-        # assign the initial offset
-        self.x_offset = self.x_offset_ini
-        self.y_offset = self.y_offset_ini
-
-        # create the initial information string
-        # self.info_str = ["Information:\n\n"
-        #                  "X-offset:\t", f"{self.x_offset}", " [mm]\n",
-        #                  "Y-offset:\t", f"{self.y_offset}", " [mm]\n",
-        #                  "Mill Gap:\t", f"{self.mill_gap}", " [mm]\n"
-        #                  "Save flag:      ", f"{self.save_flag}", "\n"]
+        # set initial information string
         self.info_str = "Please Load A Calibration File"
         self.info_str_combined = "".join(map(str, self.info_str))
 
-        # live camera feed
+        # get the live camera feed dimensions for the layout
         self.live_label = QLabel(self)
         cap = cv2.VideoCapture(camera_index)
         self.cam_width = int(cap.get(cv2.CAP_PROP_FRAME_WIDTH))
         self.cam_height = int(cap.get(cv2.CAP_PROP_FRAME_HEIGHT))
         cap.release()
-        # self.live_label.setFixedSize(self.cam_width, self.cam_height)
-        self.live_label.setFixedSize(self.cam_height, self.cam_width)
+        # self.live_label.setFixedSize(self.cam_width, self.cam_height)     # horizontal placement
+        self.live_label.setFixedSize(self.cam_height, self.cam_width)       # vertical placement
 
-        # input mill gap button with indicator
-        self.gap_button = QPushButton("Set Mill Gap")
-        self.gap_button.clicked.connect(lambda: self.input_number("mill_gap"))
-
-        # input x offset
-        self.change_x_offset_button = QPushButton("Change X Offset")
-        self.change_x_offset_button.clicked.connect(lambda: self.input_number("x_offset"))
-
-        # input y offset
-        self.change_y_offset_button = QPushButton("Change Y Offset")
-        self.change_y_offset_button.clicked.connect(lambda: self.input_number("y_offset"))
+        # tool path selection button
+        self.tp_button = QPushButton("Select Tool Path")
+        self.tp_button.clicked.connect(self.capture_image)
 
         # create calibration button
         self.create_cal_button = QPushButton("Create Calibration")
@@ -92,13 +52,9 @@ class MainWindow(QMainWindow):
         self.save_flag_button = QPushButton("Change Save Flag")
         self.save_flag_button.clicked.connect(self.change_save_flag)
 
-        # tool path selection button
-        self.tp_button = QPushButton("Select Tool Path")
-        self.tp_button.clicked.connect(self.capture_image)
-
-        # settings
-        self.settings_button = QPushButton("Settings")
-        self.settings_button.clicked.connect(self.change_settings)
+        # show config file button
+        self.show_config_button = QPushButton("Show Configuration")
+        self.show_config_button.clicked.connect(self.show_config)
 
         # manual button
         self.manual_button = QPushButton("Manual")
@@ -109,26 +65,22 @@ class MainWindow(QMainWindow):
         self.setCentralWidget(central_widget)
         main_layout = QGridLayout()
 
-        # add the live camera view
+        # add the live camera view in the window
         main_layout.addWidget(self.live_label, 0, 0, 1, 1, alignment=Qt.AlignmentFlag.AlignCenter)
 
-        # add the log box
+        # add the log box in the window
         self.text_log = QTextEdit()
         self.text_log.setReadOnly(True)
-        self.text_log.setText("\n".join(self.log_str))
+        self.text_log.setText("\n".join([]))
         main_layout.addWidget(self.text_log, 1, 0, 1, 1)
 
-        # add the buttons
+        # add the buttons to the window
         button_layout = QVBoxLayout()
-        # button_layout.addWidget(self.change_x_offset_button)
-        # button_layout.addWidget(self.change_y_offset_button)
-        # button_layout.addWidget(self.gap_button)
-        # button_layout.addWidget(self.res_cal_button)
         button_layout.addWidget(self.tp_button)
         button_layout.addWidget(self.create_cal_button)
         button_layout.addWidget(self.load_cal_button)
         button_layout.addWidget(self.save_flag_button)
-        button_layout.addWidget(self.settings_button)
+        button_layout.addWidget(self.show_config_button)
         button_layout.addWidget(self.manual_button)
 
         button_layout.addStretch()
@@ -141,11 +93,11 @@ class MainWindow(QMainWindow):
         button_widget.setLayout(button_layout)
         main_layout.addWidget(button_widget, 0, 1, 1, 1)
 
-        # add the info section
+        # add the info section to the window
         self.info_label = QLabel(self.info_str_combined)
         main_layout.addWidget(self.info_label, 1, 1, 1, 1, alignment=Qt.AlignmentFlag.AlignTop)
 
-        # Set complete layout
+        # set complete layout
         central_widget.setLayout(main_layout)
 
         # retrieve the image and connect to update function
@@ -167,40 +119,24 @@ class MainWindow(QMainWindow):
     # function taking image for tp selection
     def capture_image(self):
         # display error when no mill gap is set
-        if self.calibration_flag == False:
+        if not self.calibration_flag:
             self.append_log_string("No calibration loaded. Please load a calibration file.")
             QMessageBox.critical(self, "Error", "No Calibration File Loaded!")
             return
 
         self.append_log_string("Opening Tool Path Selection...")
         if self.latest_frame is not None:
-            self.toolpath_window = ToolPathWindow(self.latest_frame, self.x_offset, self.y_offset, self.mill_gap, self.save_flag)
+            self.toolpath_window = ToolPathWindow(self.latest_frame, self.x_offset, self.y_offset, self.mill_gap, self.save_flag, self.pix2mm)
             self.toolpath_window.show()
 
-    def input_number(self, variable):
-            current_value = float(getattr(self, variable))
-            number, ok = QInputDialog.getDouble(
-                self,
-                "Input por favor",  # window title
-                "Please enter the distance in mm:",  # label text
-                value=current_value,  # default value
-                min=0,  # minimum
-                max=1000  # maximum
-            )
-            if ok:
-                # assign the number
-                setattr(self, variable, number)
-                # update the log/info label
-                self.append_log_string(f"changed {variable} to:")
-                self.append_log_string(str(number))
-                self.update_info_label()
-
+    # open the calibration creation window
     def create_calibration(self):
         self.append_log_string("Opening Calibration Window")
         if self.latest_frame is not None:
             self.calibration_window = CalibrationWindow(self.latest_frame)
             self.calibration_window.show()
 
+    # load a calibration from a json file
     def load_calibration(self):
         self.append_log_string("Loading Calibration")
 
@@ -257,28 +193,38 @@ class MainWindow(QMainWindow):
             QMessageBox.critical(self, "Error", f"Invalid data type:\n{e}")
             self.append_log_string(f"Error: {e}")
 
+    # change the saving flag
     def change_save_flag(self):
+        if not self.calibration_flag:
+            self.append_log_string("No calibration loaded. Please load a calibration file.")
+            QMessageBox.critical(self, "Error", "No Calibration File Loaded!")
+            return
+
         self.save_flag = not self.save_flag
         self.append_log_string("Changing save flag...")
         self.update_info_label()
 
-    def change_settings(self):
-        self.append_log_string("changing settings jaja")
-        self.setting_window = SettingWindow()
-        self.setting_window.show()
+    # shows the items in the config file
+    def show_config(self):
+        self.append_log_string("Showing config file")
+        self.show_config_window = ShowConfigWindow()
+        self.show_config_window.show()
 
+    # opens the app manual
     def open_manual(self):
         self.append_log_string("Opening Manual...")
         QDesktopServices.openUrl(
             QUrl.fromLocalFile("/home/daan/Documents/thesis/engineering/coding/ring_milling_app/resources/app_manual.pdf")
         )
 
+    # adds text to the log
     def append_log_string(self, input_str):
         current_time = datetime.now().strftime("%H:%M:%S")
         log_line = f"[{current_time}] {input_str}"
         self.text_log.append(log_line)
         print(log_line)
 
+    # function updates the info label
     def update_info_label(self):
         self.info_str = [
             "Information:\n\n",

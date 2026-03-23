@@ -1,6 +1,4 @@
-from core.read_config import pix2mm_conversion
-
-def coords_to_gcode(x_coords, y_coords, offset_x, offset_y, depth, first_point_offset_x, first_point_offset_y, feed_rate = 200, conversion_factor = pix2mm_conversion):
+def coords_to_gcode(x_coords, y_coords, offset_x, offset_y, depth, first_point_offset_x, first_point_offset_y, conversion_factor, feed_rate = 200):
     if len(x_coords) != len(y_coords):
         print("x and y not equal")
         return
