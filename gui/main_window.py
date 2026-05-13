@@ -15,7 +15,7 @@ class MainWindow(QMainWindow):
     # initializations
     def __init__(self):
         super().__init__()
-        self.setWindowTitle("Ringing, Milling and Chilling")
+        self.setWindowTitle("Ring Milling Application")
         self.setGeometry(0, 0, 800, 800)
 
         # initialize variables
