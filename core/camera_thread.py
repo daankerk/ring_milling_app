@@ -1,7 +1,7 @@
 from PyQt6.QtCore import QThread, pyqtSignal
 import numpy as np
 import cv2
-from core.read_config import camera_index
+from core.read_config import camera_index, camera_rot_idx
 
 class CameraThread(QThread):
     frame_ready = pyqtSignal(np.ndarray)
@@ -12,7 +12,15 @@ class CameraThread(QThread):
             ret, frame = cap.read()
             if not ret:
                 break
-            frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+
+            if camera_rot_idx == 0:
+                pass
+            elif camera_rot_idx == 1:
+                frame = cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+            elif camera_rot_idx == 2:
+                frame = cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+            elif camera_rot_idx == 3:
+                frame = cv2.rotate(frame, cv2.ROTATE_180)
 
             # # delete later, this adds the plus
             # # Get center of frame
