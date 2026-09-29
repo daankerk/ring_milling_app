@@ -1,12 +1,14 @@
 # Ring Milling Application
 
-This application connects to a microscope and lets you select points and exports it as g_code
+This application creates G-code files that can be used for tree ring milling applications.
 
 ## Author
 Daan M. Kerkhof
 Student at Rijksuniversiteit Groningen
 
 ## Features
+
+This application take a USB camera input and visualises it. Via a calibration procedure
 
 ## How to Run
 
