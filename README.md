@@ -1,6 +1,6 @@
 # Ring Milling Application
 
-This application creates G-code files that can be used for tree ring milling applications.
+This linux application creates G-code files that can be used for tree ring milling applications.
 
 ## Author
 Daan M. Kerkhof
