@@ -4,7 +4,8 @@ from datetime import datetime
 import json
 import os
 from PyQt6.QtCore import Qt
-from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QFrame, QHBoxLayout, QMessageBox
+from PyQt6.QtWidgets import QWidget, QLabel, QPushButton, QVBoxLayout, QFrame, QHBoxLayout, QMessageBox, QInputDialog, \
+    QDoubleSpinBox
 from PyQt6.QtGui import QImage, QPixmap, QPainter, QColor, QPen
 from core.g_code import coords_to_gcode
 from core.read_config import save_dir, prev_points_dir
@@ -22,6 +23,7 @@ class ToolPathWindow(QWidget):
         self.first_point = None     # for the calibration
         self.save_flag = save_flag
         self.pix2mm = pix2mm
+        self.drill_depth = 1    # standard is 1 mm
 
         # take the image
         rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -37,6 +39,16 @@ class ToolPathWindow(QWidget):
         self.capture.setPixmap(self.capture_pm)
         self.capture.setFixedSize(w, h)
         self.capture.mousePressEvent = self.get_mouse_click
+
+        # create a change drill depth spinbox
+        self.depth_spin = QDoubleSpinBox()
+        self.depth_spin.setRange(0.0, 15.0)
+        self.depth_spin.setSingleStep(0.01)
+        self.depth_spin.setDecimals(3)
+        self.depth_spin.setValue(self.drill_depth)
+        self.depth_spin.setSuffix(" mm")
+        self.depth_spin.valueChanged.connect(self.spin_change)
+        self.depth_spin_label = QLabel("Drilling depth:")
 
         # create a save button
         self.save_button = QPushButton("Save")
@@ -59,6 +71,8 @@ class ToolPathWindow(QWidget):
         layout.addWidget(self.capture)
 
         button_layout = QVBoxLayout()
+        button_layout.addWidget(self.depth_spin_label)
+        button_layout.addWidget(self.depth_spin)
         button_layout.addWidget(self.back_button)
         button_layout.addWidget(self.clear_points_button)
         button_layout.addWidget(self.reload_button)
@@ -155,7 +169,7 @@ class ToolPathWindow(QWidget):
         # converting the points into G-code
         g_export_arr = np.array(self.points)
         self.g_export = coords_to_gcode(g_export_arr[:,0], g_export_arr[:,1], self.x_offset, self.y_offset, self.mill_gap,
-                                        self.first_point_offset_x, self.first_point_offset_y, self.pix2mm)
+                                        self.first_point_offset_x, self.first_point_offset_y, self.pix2mm, self.drill_depth)
         print(self.g_export)
 
         # write the g-code to a txt file
@@ -187,3 +201,6 @@ class ToolPathWindow(QWidget):
             self.points.clear()
             self.draw_points()
             self.first_point = None
+
+    def spin_change(self, value):
+        self.drill_depth = value

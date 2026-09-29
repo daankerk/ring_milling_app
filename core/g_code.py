@@ -1,4 +1,4 @@
-def coords_to_gcode(x_coords, y_coords, offset_x, offset_y, depth, first_point_offset_x, first_point_offset_y, conversion_factor, feed_rate = 200):
+def coords_to_gcode(x_coords, y_coords, offset_x, offset_y, depth, first_point_offset_x, first_point_offset_y, conversion_factor, drill_depth, feed_rate = 200):
     if len(x_coords) != len(y_coords):
         print("x and y not equal")
         return
@@ -38,7 +38,8 @@ def coords_to_gcode(x_coords, y_coords, offset_x, offset_y, depth, first_point_o
     gcode_lines.append(f"M03 S1000; turn on the tool")
     gcode_lines.append("G04 P2.0; wait for spindle to turn on")
     gcode_lines.append(f"G0 Z-{depth}; lower spindle")
-    gcode_lines.append(f"G0 Z-1")
+    # gcode_lines.append(f"G0 Z-1")       # this is how deep the mill will drill
+    gcode_lines.append(f"G0 Z-{drill_depth}; lower the drilling depth")
 
     for i in range(1, len(x_coords)):
         dx = x_coords[i] - x_coords[i - 1]
@@ -48,7 +49,7 @@ def coords_to_gcode(x_coords, y_coords, offset_x, offset_y, depth, first_point_o
         total_dy += dy
 
     # up the tool and turn of spindle
-    gcode_lines.append(f"G0 Z{depth}; up the spindle")
+    gcode_lines.append(f"G0 Z{depth+drill_depth}; up the spindle")
     gcode_lines.append("G0 Z10; up the spindle more")
     gcode_lines.append("M05; turn off spindle")
 
